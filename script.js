@@ -270,34 +270,72 @@ function initLightbox() {
     const lightboxOverlay = document.getElementById('lightbox-overlay');
     const lightboxImage = document.getElementById('lightbox-image');
     const lightboxClose = document.getElementById('lightbox-close');
+    const lightboxPrev = document.getElementById('lightbox-prev');
+    const lightboxNext = document.getElementById('lightbox-next');
 
     if (!lightboxOverlay || !lightboxImage || !lightboxClose) return;
+
+    let currentGallery = [];
+    let currentIndex = 0;
+
+    function openGallery(gallery, index) {
+        currentGallery = gallery || [];
+        currentIndex = typeof index === 'number' ? index : 0;
+        if (!currentGallery.length) return;
+        const item = currentGallery[currentIndex];
+        lightboxImage.src = item.src;
+        lightboxImage.alt = item.alt || 'Project image preview';
+        lightboxOverlay.classList.add('active');
+        lightboxOverlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function showIndex(i) {
+        if (!currentGallery.length) return;
+        currentIndex = (i + currentGallery.length) % currentGallery.length;
+        const item = currentGallery[currentIndex];
+        lightboxImage.src = item.src;
+        lightboxImage.alt = item.alt || '';
+    }
 
     document.querySelectorAll('.project-lightbox-trigger').forEach(trigger => {
         trigger.addEventListener('click', (event) => {
             event.preventDefault();
-            const imageUrl = trigger.getAttribute('href');
-            const imageAlt = trigger.querySelector('img')?.getAttribute('alt') || 'Project image preview';
-            lightboxImage.src = imageUrl;
-            lightboxImage.alt = imageAlt;
-            lightboxOverlay.classList.add('active');
-            lightboxOverlay.setAttribute('aria-hidden', 'false');
+            const card = trigger.closest('.project-card');
+            const triggers = card ? Array.from(card.querySelectorAll('.project-lightbox-trigger')) : [trigger];
+            const gallery = triggers.map(t => ({ src: t.getAttribute('href'), alt: t.querySelector('img')?.getAttribute('alt') || '' }));
+            const href = trigger.getAttribute('href');
+            const index = gallery.findIndex(g => g.src === href);
+            openGallery(gallery, index !== -1 ? index : 0);
         });
     });
 
+    lightboxPrev?.addEventListener('click', () => showIndex(currentIndex - 1));
+    lightboxNext?.addEventListener('click', () => showIndex(currentIndex + 1));
+
     lightboxClose.addEventListener('click', () => {
         closeLightbox(lightboxOverlay, lightboxImage);
+        currentGallery = [];
+        currentIndex = 0;
     });
 
     lightboxOverlay.addEventListener('click', (event) => {
         if (event.target === lightboxOverlay) {
             closeLightbox(lightboxOverlay, lightboxImage);
+            currentGallery = [];
+            currentIndex = 0;
         }
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && lightboxOverlay.classList.contains('active')) {
+        if (!lightboxOverlay.classList.contains('active')) return;
+        if (event.key === 'Escape') {
             closeLightbox(lightboxOverlay, lightboxImage);
+            currentGallery = [];
+            currentIndex = 0;
+        } else if (event.key === 'ArrowLeft') {
+            showIndex(currentIndex - 1);
+        } else if (event.key === 'ArrowRight') {
+            showIndex(currentIndex + 1);
         }
     });
 }
