@@ -94,6 +94,16 @@ body {
     line-height: var(--line-height-normal);
     color: var(--color-text);
     background-color: var(--color-white);
+    overflow-x: hidden;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+*, *::before, *::after {
+    word-break: break-word;
 }
 
 /* ===== TYPOGRAPHY ===== */
@@ -1614,6 +1624,44 @@ a:focus {
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 900px) {
+    .hero-container,
+    .about-content,
+    .contact-content,
+    .why-intro {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .hero-content {
+        max-width: none;
+        text-align: center;
+    }
+
+    .hero-ctas {
+        justify-content: center;
+    }
+
+    .services-grid,
+    .testimonials-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .certificate-card-featured {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .certificate-image,
+    .certificate-meta {
+        width: 100%;
+    }
+
+    .certificate-image {
+        height: 260px;
+    }
+}
+
 @media (max-width: 768px) {
     :root {
         --font-size-4xl: 2rem;
@@ -1640,14 +1688,22 @@ a:focus {
 
     /* About -> single column */
     .about-content { grid-template-columns: 1fr; gap: 1rem; }
-    .about-stats { grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md); }
+    .about-stats { grid-template-columns: 1fr; gap: var(--spacing-md); }
+    .stat-card { padding: var(--spacing-md); }
+
+    /* Timeline -> stacked card */
+    .timeline { max-width: 100%; }
+    .timeline::before { left: 0.35rem; }
+    .timeline-item { grid-template-columns: 1fr; gap: 0.5rem; padding-left: 1.1rem; margin-bottom: 1.25rem; }
+    .timeline-marker { left: 0; }
 
     /* Projects grid -> single column, touch-friendly sizes */
     .projects-grid { grid-template-columns: 1fr; gap: var(--spacing-md); }
-    .project-card { padding: 0.5rem; }
+    .project-card { padding: 0; }
     .project-image { height: 220px; aspect-ratio: initial; }
     .project-slider-track a { flex: 0 0 100%; }
     .project-content { padding: calc(var(--spacing-md) + 0.25rem); }
+    .project-content h3 { font-size: 1.3rem; }
 
     /* Slider controls: smaller and closer to edges */
     .project-slider-prev, .project-slider-next { width: 2.6rem; height: 2.6rem; font-size: 1.1rem; }
@@ -1656,18 +1712,26 @@ a:focus {
     .project-slider-indicators { margin-top: 0.5rem; }
 
     /* Services, skills and competencies stack */
-    .services-grid { grid-template-columns: 1fr; }
-    .skills-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+    .services-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .service-card { padding: 1.25rem; }
+    .skills-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; }
     .competencies-list { grid-template-columns: 1fr; }
 
     /* Why section stack */
     .why-intro { grid-template-columns: 1fr; gap: 1rem; }
     .why-intro-media { min-height: 180px; }
+    .why-grid { grid-template-columns: 1fr; gap: 0.9rem; }
+    .why-card, .why-card-large, .why-card-tall { grid-column: span 1; grid-row: span 1; min-height: auto; }
+    .why-intro-card { padding: 1.25rem; }
 
-    /* Contact and footer */
+    /* Testimonials and contact */
+    .testimonials-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .testimonial-card { padding: 1.25rem; }
     .contact-content { grid-template-columns: 1fr; gap: var(--spacing-md); }
     .contact-info { padding: var(--spacing-lg); }
-    .footer-content { display: block; }
+
+    /* Footer */
+    .footer-content { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
 
     /* Reduce section padding on small screens */
     .section { padding: var(--spacing-2xl) var(--spacing-md); }
@@ -1725,6 +1789,10 @@ a:focus {
 
     .stat-card {
         padding: var(--spacing-md);
+    }
+
+    .skills-grid {
+        grid-template-columns: 1fr;
     }
 
     .timeline-item {
