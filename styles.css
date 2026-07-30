@@ -943,6 +943,47 @@ a:focus {
     transition: transform 10s ease-in-out;
 }
 
+/* Slider controls & indicators */
+.project-slider-prev,
+.project-slider-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.95);
+    border: none;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    cursor: pointer;
+    z-index: 100;
+}
+
+.project-slider-prev { left: 0.75rem; }
+.project-slider-next { right: 0.75rem; }
+
+.project-slider-indicators {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.9rem;
+}
+
+.project-slider-indicator {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(0,0,0,0.15);
+    cursor: pointer;
+}
+
+.project-slider-indicator.active {
+    background: var(--color-accent);
+}
+
 .lightbox-overlay {
     position: fixed;
     inset: 0;

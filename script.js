@@ -287,6 +287,8 @@ function initLightbox() {
         lightboxImage.alt = item.alt || 'Project image preview';
         lightboxOverlay.classList.add('active');
         lightboxOverlay.setAttribute('aria-hidden', 'false');
+        // pause sliders while lightbox is open
+        stopAllSliders();
     }
 
     function showIndex(i) {
@@ -316,6 +318,8 @@ function initLightbox() {
         closeLightbox(lightboxOverlay, lightboxImage);
         currentGallery = [];
         currentIndex = 0;
+        // resume sliders after closing
+        startAllSliders();
     });
 
     lightboxOverlay.addEventListener('click', (event) => {
@@ -323,6 +327,8 @@ function initLightbox() {
             closeLightbox(lightboxOverlay, lightboxImage);
             currentGallery = [];
             currentIndex = 0;
+            // resume sliders after closing
+            startAllSliders();
         }
     });
 
@@ -332,6 +338,8 @@ function initLightbox() {
             closeLightbox(lightboxOverlay, lightboxImage);
             currentGallery = [];
             currentIndex = 0;
+            // resume sliders after closing
+            startAllSliders();
         } else if (event.key === 'ArrowLeft') {
             showIndex(currentIndex - 1);
         } else if (event.key === 'ArrowRight') {
@@ -347,28 +355,104 @@ function closeLightbox(overlay, image) {
 }
 
 // Generalized slider that works with any number of slides
+let projectSlidersState = [];
+
 function initProjectSliders() {
     const sliders = document.querySelectorAll('.project-slider');
 
-    sliders.forEach(slider => {
+    sliders.forEach((slider) => {
         const track = slider.querySelector('.project-slider-track');
         if (!track) return;
 
         const slides = Array.from(track.children);
-        if (slides.length < 2) return;
+        if (slides.length < 1) return;
 
-        // Make each slide full width
-        slides.forEach(s => {
-            s.style.flex = '0 0 100%';
-        });
+        // ensure each slide fills the slider
+        slides.forEach(s => s.style.flex = '0 0 100%');
+
+        // create controls and indicators if multi-image
+        const hasMultiple = slides.length > 1;
+        let prevBtn, nextBtn, indicators;
+
+        if (hasMultiple) {
+            prevBtn = document.createElement('button');
+            prevBtn.className = 'project-slider-prev';
+            prevBtn.setAttribute('aria-label', 'Previous');
+            prevBtn.textContent = '‹';
+
+            nextBtn = document.createElement('button');
+            nextBtn.className = 'project-slider-next';
+            nextBtn.setAttribute('aria-label', 'Next');
+            nextBtn.textContent = '›';
+
+            indicators = document.createElement('div');
+            indicators.className = 'project-slider-indicators';
+
+            slides.forEach((_, i) => {
+                const dot = document.createElement('button');
+                dot.className = 'project-slider-indicator';
+                if (i === 0) dot.classList.add('active');
+                dot.addEventListener('click', () => {
+                    goTo(i);
+                    resetAuto();
+                });
+                indicators.appendChild(dot);
+            });
+
+            slider.appendChild(prevBtn);
+            slider.appendChild(nextBtn);
+            slider.appendChild(indicators);
+        }
 
         let currentIndex = 0;
-
-        setInterval(() => {
-            currentIndex = (currentIndex + 1) % slides.length;
+        function update() {
             track.style.transform = `translateX(-${currentIndex * 100}%)`;
-        }, 5000);
+            if (indicators) {
+                Array.from(indicators.children).forEach((d, j) => d.classList.toggle('active', j === currentIndex));
+            }
+        }
+
+        function next() { currentIndex = (currentIndex + 1) % slides.length; update(); }
+        function prev() { currentIndex = (currentIndex - 1 + slides.length) % slides.length; update(); }
+        function goTo(i) { currentIndex = (i + slides.length) % slides.length; update(); }
+
+        if (hasMultiple) {
+            prevBtn.addEventListener('click', () => { prev(); resetAuto(); });
+            nextBtn.addEventListener('click', () => { next(); resetAuto(); });
+        }
+
+        // Auto-slide
+        let intervalId = null;
+        function startAuto() {
+            if (intervalId) return;
+            intervalId = setInterval(() => next(), 5000);
+        }
+
+        function stopAuto() {
+            if (!intervalId) return;
+            clearInterval(intervalId);
+            intervalId = null;
+        }
+
+        function resetAuto() {
+            stopAuto();
+            startAuto();
+        }
+
+        // start
+        if (hasMultiple) startAuto();
+
+        // store state
+        projectSlidersState.push({ slider, track, slides, startAuto, stopAuto, goTo });
     });
+}
+
+function stopAllSliders() {
+    projectSlidersState.forEach(s => s.stopAuto && s.stopAuto());
+}
+
+function startAllSliders() {
+    projectSlidersState.forEach(s => s.startAuto && s.startAuto());
 }
 
 // ===== ACCESSIBILITY: FOCUS MANAGEMENT =====
