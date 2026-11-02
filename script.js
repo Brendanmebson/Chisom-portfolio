@@ -1,506 +1,317 @@
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 // ===== NAVIGATION TOGGLE =====
-const navToggle = document.querySelector('.nav-toggle');
-const navMenu = document.querySelector('.nav-menu');
+const bar = document.querySelector('.bar');
+const barToggle = document.querySelector('.bar-toggle');
+const barMenu = document.querySelector('.bar-menu');
 
-navToggle.addEventListener('click', () => {
-    const isExpanded = navToggle.getAttribute('aria-expanded') === 'true';
-    navToggle.setAttribute('aria-expanded', !isExpanded);
-    navMenu.classList.toggle('active');
+function closeMenu() {
+    barToggle.setAttribute('aria-expanded', 'false');
+    barMenu.classList.remove('is-open');
+}
+
+barToggle.addEventListener('click', () => {
+    const isOpen = barMenu.classList.toggle('is-open');
+    barToggle.setAttribute('aria-expanded', String(isOpen));
 });
 
-// Close mobile menu when a link is clicked
-const navLinks = navMenu.querySelectorAll('a');
-navLinks.forEach(link => {
-    link.addEventListener('click', () => {
-        navToggle.setAttribute('aria-expanded', 'false');
-        navMenu.classList.remove('active');
-    });
+barMenu.addEventListener('click', (e) => {
+    if (e.target.closest('a')) closeMenu();
 });
 
-// Close mobile menu when clicking outside
 document.addEventListener('click', (e) => {
-    const navbar = document.querySelector('.navbar');
-    if (!navbar.contains(e.target)) {
-        navToggle.setAttribute('aria-expanded', 'false');
-        navMenu.classList.remove('active');
+    if (!bar.contains(e.target)) closeMenu();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMenu();
+});
+
+// ===== THE MONDAY CALENDAR =====
+// The blocks of the CEO's Monday in assets/project1.jpg, in minutes since midnight.
+const DAY_START = 360;
+const DAY_END = 1020;
+
+const mondayBlocks = [
+    { start: 360, end: 390, title: 'Morning Workout', project: 'p-calendar' },
+    { start: 390, end: 420, title: 'Breakfast & Industry News', project: 'p-calendar' },
+    { start: 420, end: 450, title: 'Review Emails & Daily Priorities', project: 'p-email' },
+    { start: 450, end: 480, title: 'Executive Leadership Stand-up', project: 'p-meetings' },
+    { start: 480, end: 540, title: 'Product Strategy Meeting', project: 'p-launch' },
+    { start: 540, end: 555, title: 'Buffer Break', buffer: true },
+    { start: 555, end: 600, title: 'Investor Update Call' },
+    { start: 600, end: 660, title: 'Budget Review Meeting', project: 'p-data' },
+    { start: 660, end: 675, title: 'Buffer Time', buffer: true },
+    { start: 675, end: 720, title: 'Recruitment Interview' },
+    { start: 720, end: 780, title: 'Lunch Meeting' },
+    { start: 780, end: 840, title: 'Client Presentation', project: 'p-clients' },
+    { start: 840, end: 855, title: 'Break', buffer: true },
+    { start: 855, end: 900, title: 'Marketing Strategy Meeting' },
+    { start: 900, end: 960, title: 'Board Meeting Preparation', project: 'p-research' },
+    { start: 960, end: 1020, title: 'Review Reports & Approvals', project: 'p-files' }
+];
+
+function formatTime(minutes, withPeriod = true) {
+    const hours24 = Math.floor(minutes / 60);
+    const hours = hours24 > 12 ? hours24 - 12 : hours24;
+    const mins = String(minutes % 60).padStart(2, '0');
+    if (!withPeriod) return `${hours}:${mins}`;
+    return `${hours}:${mins} ${hours24 >= 12 ? 'pm' : 'am'}`;
+}
+
+function dayPercent(minutes) {
+    return ((minutes - DAY_START) / (DAY_END - DAY_START)) * 100;
+}
+
+function renderDay(root) {
+    const head = document.createElement('div');
+    head.className = 'day-head';
+    head.innerHTML = '<span class="day-title">Monday 20</span><span class="day-now"></span>';
+
+    const grid = document.createElement('div');
+    grid.className = 'day-grid';
+
+    for (let minutes = DAY_START; minutes < DAY_END; minutes += 60) {
+        const hour = document.createElement('div');
+        hour.className = 'day-hour';
+        hour.style.top = `${dayPercent(minutes)}%`;
+        hour.innerHTML = `<span>${formatTime(minutes).replace(':00 ', '')}</span>`;
+        grid.appendChild(hour);
     }
-});
 
-// ===== SCROLL ANIMATIONS =====
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
-};
-
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
-            observer.unobserve(entry.target);
-        }
+    mondayBlocks.forEach((block) => {
+        const el = document.createElement(block.project ? 'a' : 'div');
+        el.className = block.buffer ? 'day-block is-buffer' : 'day-block';
+        el.style.top = `calc(${dayPercent(block.start)}% + 1px)`;
+        el.style.height = `calc(${dayPercent(block.end) - dayPercent(block.start)}% - 2px)`;
+        el.textContent = block.title;
+        if (block.project) el.href = `#${block.project}`;
+        grid.appendChild(el);
     });
-}, observerOptions);
 
-// Observe all section elements for fade-in on scroll
-document.querySelectorAll('.section, .timeline-item, .skill-badge, .competency-card, .service-card, .project-card, .certificate-card, .why-card, .testimonial-card').forEach(el => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(20px)';
-    el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-    observer.observe(el);
-});
+    const line = document.createElement('div');
+    line.className = 'day-line';
+    grid.appendChild(line);
 
-// ===== FORM HANDLING =====
-const contactForm = document.getElementById('contact-form');
+    root.setAttribute('data-ui', '');
+    root.dataset.tone = 'white';
+    root.append(head, grid);
+}
 
-if (contactForm) {
-    contactForm.addEventListener('submit', (e) => {
-        e.preventDefault();
+const days = Array.from(document.querySelectorAll('[data-day]'));
+days.forEach(renderDay);
 
-        // Get form data
-        const formData = new FormData(contactForm);
-        const data = Object.fromEntries(formData);
+function setClock(minutes) {
+    const active = mondayBlocks.findIndex(b => minutes >= b.start && minutes < b.end);
+    const current = mondayBlocks[active === -1 ? mondayBlocks.length - 1 : active];
 
-        // Basic validation
-        if (!validateForm(data)) {
-            showNotification('Please fill in all fields correctly.', 'error');
-            return;
-        }
-
-        const recipient = 'chisomjil40@gmail.com';
-        const subject = `Portfolio Inquiry: ${data.subject.trim()}`;
-        const body = [
-            `Name: ${data.name.trim()}`,
-            `Email: ${data.email.trim()}`,
-            `Subject: ${data.subject.trim()}`,
-            '',
-            `Message: ${data.message.trim()}`
-        ].join('\n');
-
-        const mailtoLink = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-        contactForm.reset();
-        window.location.href = mailtoLink;
-
-        console.log('Form submitted:', data);
+    days.forEach((day) => {
+        day.querySelector('.day-line').style.top = `${dayPercent(minutes)}%`;
+        day.querySelector('.day-now').textContent = formatTime(Math.round(minutes));
+        day.querySelectorAll('.day-block').forEach((el, i) => {
+            el.classList.toggle('is-now', mondayBlocks[i] === current);
+        });
     });
 }
 
+// ===== SCROLL: CLOCK, NAME AND PORTRAIT =====
+const projects = Array.from(document.querySelectorAll('.project[data-time]'));
+const servicesEnd = document.querySelector('#services');
+const heroName = document.querySelector('.name');
+const portrait = document.querySelector('[data-layer="portrait"]');
+
+function clockFromScroll() {
+    const anchor = window.innerHeight * 0.5;
+    const stops = projects.map(p => ({ y: p.getBoundingClientRect().top, time: Number(p.dataset.time) }));
+    stops.push({ y: servicesEnd.getBoundingClientRect().top, time: 1000 });
+    stops.push({ y: servicesEnd.getBoundingClientRect().bottom, time: DAY_END - 1 });
+
+    if (anchor <= stops[0].y) return DAY_START;
+    for (let i = 0; i < stops.length - 1; i += 1) {
+        const a = stops[i];
+        const b = stops[i + 1];
+        if (anchor < b.y) return a.time + ((anchor - a.y) / (b.y - a.y)) * (b.time - a.time);
+    }
+    return DAY_END - 1;
+}
+
+let ticking = false;
+
+function onScroll() {
+    ticking = false;
+    setClock(clockFromScroll());
+    if (reduceMotion) return;
+    const progress = Math.min(window.scrollY / window.innerHeight, 1);
+    heroName.style.setProperty('--shrink', (1 - progress * 0.06).toFixed(4));
+    portrait.style.setProperty('--drift', (1 + progress * 0.04).toFixed(4));
+}
+
+window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(onScroll);
+}, { passive: true });
+
+onScroll();
+
+// ===== STAGE: THE FIXED HALF FOLLOWS THE SECTIONS =====
+const layers = document.querySelectorAll('.stage-layer');
+const split = document.querySelector('.split');
+const navLinks = barMenu.querySelectorAll('a');
+
+const stageObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const name = entry.target.dataset.stage;
+        const current = `#${entry.target.dataset.nav || entry.target.id}`;
+        navLinks.forEach((link) => {
+            if (link.getAttribute('href') === current) link.setAttribute('aria-current', 'true');
+            else link.removeAttribute('aria-current');
+        });
+        bar.classList.toggle('is-wide', name === 'none');
+        if (name === 'none') return;
+        split.dataset.tone = entry.target.dataset.tone;
+        layers.forEach(layer => layer.classList.toggle('is-on', layer.dataset.layer === name));
+    });
+}, { rootMargin: '-50% 0px -50% 0px' });
+
+document.querySelectorAll('[data-stage]').forEach(el => stageObserver.observe(el));
+
+// ===== ENTRANCES =====
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-in');
+        revealObserver.unobserve(entry.target);
+    });
+}, { rootMargin: '0px 0px -8% 0px' });
+
+document.querySelectorAll('[data-reveal], .block > h2, .skills > h2, .project').forEach(el => revealObserver.observe(el));
+
+// ===== YOUR MONDAY =====
+const PLAN_START = 540;
+const PLAN_BLOCK = 45;
+const PLAN_BUFFER = 15;
+
+const contactForm = document.getElementById('contact-form');
+const picks = Array.from(contactForm.querySelectorAll('input[name="services"]'));
+const planList = document.querySelector('.plan-list');
+const planEmpty = document.querySelector('.plan-empty');
+const formNote = document.getElementById('form-note');
+let chosen = [];
+
+function buildPlan(services) {
+    const rows = [];
+    let minutes = PLAN_START;
+    services.forEach((title, i) => {
+        rows.push({ time: minutes, title });
+        minutes += PLAN_BLOCK;
+        if ((i + 1) % 2 === 0) {
+            rows.push({ time: minutes, title: 'Buffer', buffer: true });
+            minutes += PLAN_BUFFER;
+        }
+    });
+    return rows;
+}
+
+function renderPlan() {
+    const existing = new Map(Array.from(planList.children).map(li => [li.dataset.key, li]));
+    planList.textContent = '';
+
+    buildPlan(chosen).forEach((row, i) => {
+        const key = row.buffer ? `buffer-${i}` : row.title;
+        const li = existing.get(key) || document.createElement('li');
+        li.dataset.key = key;
+        li.className = row.buffer ? 'is-buffer' : '';
+        li.innerHTML = '';
+        const time = document.createElement('time');
+        time.textContent = formatTime(row.time, false);
+        li.append(time, row.title);
+        planList.appendChild(li);
+    });
+
+    planEmpty.hidden = chosen.length > 0;
+}
+
+picks.forEach((pick) => {
+    pick.addEventListener('change', () => {
+        chosen = pick.checked ? [...chosen, pick.value] : chosen.filter(v => v !== pick.value);
+        renderPlan();
+    });
+});
+
+// ===== FORM HANDLING =====
 function validateForm(data) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (!data.name || !data.name.trim()) return false;
     if (!data.email || !emailRegex.test(data.email)) return false;
-    if (!data.subject || !data.subject.trim()) return false;
     if (!data.message || !data.message.trim()) return false;
 
     return true;
 }
 
-function showNotification(message, type = 'info') {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        background-color: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        z-index: 1000;
-        animation: slideInRight 0.3s ease-out;
-        font-weight: 500;
-        max-width: 400px;
-    `;
+contactForm.addEventListener('submit', (e) => {
+    e.preventDefault();
 
-    document.body.appendChild(notification);
+    const data = Object.fromEntries(new FormData(contactForm));
 
-    // Remove notification after 4 seconds
-    setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-    }, 4000);
+    if (!validateForm(data)) {
+        formNote.textContent = 'Please add your name, a valid email and a short message.';
+        return;
+    }
+
+    const recipient = 'chisomjil40@gmail.com';
+    const plan = buildPlan(chosen).map(row => `${formatTime(row.time, false)}  ${row.title}`);
+    const subject = `Portfolio Inquiry: ${chosen.length ? chosen.join(', ') : data.name.trim()}`;
+    const body = [
+        `Name: ${data.name.trim()}`,
+        `Email: ${data.email.trim()}`,
+        '',
+        ...(plan.length ? ['My Monday:', ...plan, ''] : []),
+        `Message: ${data.message.trim()}`
+    ].join('\n');
+
+    window.location.href = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    formNote.textContent = 'Your email app should now be open. If not, write to chisomjil40@gmail.com.';
+});
+
+// ===== LIGHTBOX =====
+const lightbox = document.getElementById('lightbox');
+const lightboxImage = document.getElementById('lightbox-image');
+const lightboxPrev = document.getElementById('lightbox-prev');
+const lightboxNext = document.getElementById('lightbox-next');
+let gallery = [];
+let galleryIndex = 0;
+
+function showImage(index) {
+    galleryIndex = (index + gallery.length) % gallery.length;
+    const link = gallery[galleryIndex];
+    const image = link.querySelector('img');
+    lightboxImage.src = link.getAttribute('href');
+    lightboxImage.alt = image.alt;
 }
 
-// ===== SMOOTH SCROLL BEHAVIOR =====
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        const href = this.getAttribute('href');
-        if (href === '#') return;
-
-        const target = document.querySelector(href);
-        if (target) {
-            e.preventDefault();
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
+document.querySelectorAll('[data-gallery]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        gallery = Array.from(document.querySelectorAll(`[data-gallery="${link.dataset.gallery}"]`));
+        lightboxPrev.hidden = gallery.length < 2;
+        lightboxNext.hidden = gallery.length < 2;
+        showImage(gallery.indexOf(link));
+        lightbox.showModal();
     });
 });
 
-// ===== NAVBAR SCROLL EFFECT =====
-const navbar = document.querySelector('.navbar');
-let lastScrollTop = 0;
+lightboxPrev.addEventListener('click', () => showImage(galleryIndex - 1));
+lightboxNext.addEventListener('click', () => showImage(galleryIndex + 1));
+document.getElementById('lightbox-close').addEventListener('click', () => lightbox.close());
 
-window.addEventListener('scroll', () => {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-    if (scrollTop > 50) {
-        navbar.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
-    } else {
-        navbar.style.boxShadow = 'none';
-    }
-
-    lastScrollTop = scrollTop;
+lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) lightbox.close();
 });
 
-// ===== LAZY LOAD IMAGES =====
-if ('IntersectionObserver' in window) {
-    const images = document.querySelectorAll('img');
-    
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                img.src = img.dataset.src || img.src;
-                img.classList.add('loaded');
-                imageObserver.unobserve(img);
-            }
-        });
-    });
-
-    images.forEach(img => imageObserver.observe(img));
-}
-
-// ===== KEYBOARD NAVIGATION =====
-document.addEventListener('keydown', (e) => {
-    // Close mobile menu with Escape key
-    if (e.key === 'Escape') {
-        navToggle.setAttribute('aria-expanded', 'false');
-        navMenu.classList.remove('active');
-    }
+lightbox.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') showImage(galleryIndex - 1);
+    if (e.key === 'ArrowRight') showImage(galleryIndex + 1);
 });
-
-// ===== PERFORMANCE: PASSIVE EVENT LISTENERS =====
-window.addEventListener('scroll', () => {}, { passive: true });
-window.addEventListener('touchmove', () => {}, { passive: true });
-
-// ===== ADD ANIMATION KEYFRAMES VIA JAVASCRIPT =====
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideInRight {
-        from {
-            opacity: 0;
-            transform: translateX(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    @keyframes slideOutRight {
-        from {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        to {
-            opacity: 0;
-            transform: translateX(30px);
-        }
-    }
-
-    img.loaded {
-        animation: fadeInUp 0.6s ease-out;
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-`;
-document.head.appendChild(style);
-
-// ===== INITIALIZE ON LOAD =====
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Portfolio website initialized');
-    
-    // Add data attributes for tracking
-    document.querySelectorAll('a[href^="http"]').forEach(link => {
-        link.setAttribute('rel', 'noopener noreferrer');
-        link.setAttribute('target', '_blank');
-    });
-
-    initProjectSliders();
-    initLightbox();
-});
-
-function initProjectSliders() {
-    const sliders = document.querySelectorAll('.project-slider');
-
-    sliders.forEach(slider => {
-        const track = slider.querySelector('.project-slider-track');
-        if (!track) return;
-
-        const slides = Array.from(track.children);
-        if (slides.length < 2) return;
-
-        let currentIndex = 0;
-
-        setInterval(() => {
-            currentIndex = (currentIndex + 1) % slides.length;
-            track.style.transform = `translateX(-${currentIndex * 50}%)`;
-        }, 5000);
-    });
-}
-
-
-function initLightbox() {
-    const lightboxOverlay = document.getElementById('lightbox-overlay');
-    const lightboxImage = document.getElementById('lightbox-image');
-    const lightboxClose = document.getElementById('lightbox-close');
-    const lightboxPrev = document.getElementById('lightbox-prev');
-    const lightboxNext = document.getElementById('lightbox-next');
-
-    if (!lightboxOverlay || !lightboxImage || !lightboxClose) return;
-
-    let currentGallery = [];
-    let currentIndex = 0;
-
-    function openGallery(gallery, index) {
-        currentGallery = gallery || [];
-        currentIndex = typeof index === 'number' ? index : 0;
-        if (!currentGallery.length) return;
-        const item = currentGallery[currentIndex];
-        lightboxImage.src = item.src;
-        lightboxImage.alt = item.alt || 'Project image preview';
-        lightboxOverlay.classList.add('active');
-        lightboxOverlay.setAttribute('aria-hidden', 'false');
-        // pause sliders while lightbox is open
-        stopAllSliders();
-    }
-
-    function showIndex(i) {
-        if (!currentGallery.length) return;
-        currentIndex = (i + currentGallery.length) % currentGallery.length;
-        const item = currentGallery[currentIndex];
-        lightboxImage.src = item.src;
-        lightboxImage.alt = item.alt || '';
-    }
-
-    document.querySelectorAll('.project-lightbox-trigger').forEach(trigger => {
-        trigger.addEventListener('click', (event) => {
-            event.preventDefault();
-            const card = trigger.closest('.project-card');
-            const triggers = card ? Array.from(card.querySelectorAll('.project-lightbox-trigger')) : [trigger];
-            const gallery = triggers.map(t => ({ src: t.getAttribute('href'), alt: t.querySelector('img')?.getAttribute('alt') || '' }));
-            const href = trigger.getAttribute('href');
-            const index = gallery.findIndex(g => g.src === href);
-            openGallery(gallery, index !== -1 ? index : 0);
-        });
-    });
-
-    lightboxPrev?.addEventListener('click', () => showIndex(currentIndex - 1));
-    lightboxNext?.addEventListener('click', () => showIndex(currentIndex + 1));
-
-    lightboxClose.addEventListener('click', () => {
-        closeLightbox(lightboxOverlay, lightboxImage);
-        currentGallery = [];
-        currentIndex = 0;
-        // resume sliders after closing
-        startAllSliders();
-    });
-
-    lightboxOverlay.addEventListener('click', (event) => {
-        if (event.target === lightboxOverlay) {
-            closeLightbox(lightboxOverlay, lightboxImage);
-            currentGallery = [];
-            currentIndex = 0;
-            // resume sliders after closing
-            startAllSliders();
-        }
-    });
-
-    document.addEventListener('keydown', (event) => {
-        if (!lightboxOverlay.classList.contains('active')) return;
-        if (event.key === 'Escape') {
-            closeLightbox(lightboxOverlay, lightboxImage);
-            currentGallery = [];
-            currentIndex = 0;
-            // resume sliders after closing
-            startAllSliders();
-        } else if (event.key === 'ArrowLeft') {
-            showIndex(currentIndex - 1);
-        } else if (event.key === 'ArrowRight') {
-            showIndex(currentIndex + 1);
-        }
-    });
-}
-
-function closeLightbox(overlay, image) {
-    overlay.classList.remove('active');
-    overlay.setAttribute('aria-hidden', 'true');
-    image.src = '';
-}
-
-// Generalized slider that works with any number of slides
-let projectSlidersState = [];
-
-function initProjectSliders() {
-    const sliders = document.querySelectorAll('.project-slider');
-
-    sliders.forEach((slider) => {
-        const track = slider.querySelector('.project-slider-track');
-        if (!track) return;
-
-        const slides = Array.from(track.children);
-        if (slides.length < 1) return;
-
-        // ensure each slide fills the slider
-        slides.forEach(s => s.style.flex = '0 0 100%');
-
-        // create controls and indicators if multi-image
-        const hasMultiple = slides.length > 1;
-        let prevBtn, nextBtn, indicators;
-
-        if (hasMultiple) {
-            prevBtn = document.createElement('button');
-            prevBtn.className = 'project-slider-prev';
-            prevBtn.setAttribute('aria-label', 'Previous');
-            prevBtn.textContent = '‹';
-
-            nextBtn = document.createElement('button');
-            nextBtn.className = 'project-slider-next';
-            nextBtn.setAttribute('aria-label', 'Next');
-            nextBtn.textContent = '›';
-
-            indicators = document.createElement('div');
-            indicators.className = 'project-slider-indicators';
-
-            slides.forEach((_, i) => {
-                const dot = document.createElement('button');
-                dot.className = 'project-slider-indicator';
-                if (i === 0) dot.classList.add('active');
-                dot.addEventListener('click', () => {
-                    goTo(i);
-                    resetAuto();
-                });
-                indicators.appendChild(dot);
-            });
-
-            slider.appendChild(prevBtn);
-            slider.appendChild(nextBtn);
-            slider.appendChild(indicators);
-        }
-
-        let currentIndex = 0;
-        function update() {
-            track.style.transform = `translateX(-${currentIndex * 100}%)`;
-            if (indicators) {
-                Array.from(indicators.children).forEach((d, j) => d.classList.toggle('active', j === currentIndex));
-            }
-        }
-
-        function next() { currentIndex = (currentIndex + 1) % slides.length; update(); }
-        function prev() { currentIndex = (currentIndex - 1 + slides.length) % slides.length; update(); }
-        function goTo(i) { currentIndex = (i + slides.length) % slides.length; update(); }
-
-        if (hasMultiple) {
-            prevBtn.addEventListener('click', () => { prev(); resetAuto(); });
-            nextBtn.addEventListener('click', () => { next(); resetAuto(); });
-        }
-
-        // Auto-slide
-        let intervalId = null;
-        function startAuto() {
-            if (intervalId) return;
-            intervalId = setInterval(() => next(), 5000);
-        }
-
-        function stopAuto() {
-            if (!intervalId) return;
-            clearInterval(intervalId);
-            intervalId = null;
-        }
-
-        function resetAuto() {
-            stopAuto();
-            startAuto();
-        }
-
-        // start
-        if (hasMultiple) startAuto();
-
-        // store state
-        projectSlidersState.push({ slider, track, slides, startAuto, stopAuto, goTo });
-    });
-}
-
-function stopAllSliders() {
-    projectSlidersState.forEach(s => s.stopAuto && s.stopAuto());
-}
-
-function startAllSliders() {
-    projectSlidersState.forEach(s => s.startAuto && s.startAuto());
-}
-
-// ===== ACCESSIBILITY: FOCUS MANAGEMENT =====
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
-        document.body.classList.add('keyboard-active');
-    }
-});
-
-document.addEventListener('mousedown', () => {
-    document.body.classList.remove('keyboard-active');
-});
-
-// Add CSS for focus visibility
-const focusStyle = document.createElement('style');
-focusStyle.textContent = `
-    body.keyboard-active *:focus {
-        outline: 2px solid var(--color-accent);
-        outline-offset: 2px;
-    }
-`;
-document.head.appendChild(focusStyle);
-
-// ===== UTILITY: GET VIEWPORT SIZE =====
-function getViewportSize() {
-    return {
-        width: Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0),
-        height: Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
-    };
-}
-
-// ===== UTILITY: DEBOUNCE FUNCTION =====
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// ===== RESPONSIVE BEHAVIOR =====
-const handleResize = debounce(() => {
-    const viewport = getViewportSize();
-    console.log('Viewport size:', viewport);
-}, 250);
-
-window.addEventListener('resize', handleResize);
