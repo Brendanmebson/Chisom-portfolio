@@ -513,6 +513,38 @@ a.day-block:hover { transform: translateX(6px); }
 
 .footer-links { display: flex; gap: 64px; margin-top: 56px; font-size: var(--step-small); line-height: 1.7; }
 .legal { margin-top: auto; padding-top: 48px; font-size: var(--step-small); }
+.credit { margin-top: 6px; font-size: var(--step-small); }
+
+/* ===== SUPPORT BUTTON ===== */
+.coffee-btn {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    flex: none;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px;
+    background: #ffdd00;
+    white-space: nowrap;
+    color: #111111;
+    border: 2px solid #111111; /* taste-skill-ignore */
+    box-shadow: 3px 3px 0 #111111; /* taste-skill-ignore */
+    font: 900 13px/1 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.coffee-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #111111; /* taste-skill-ignore */ }
+.coffee-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #111111; /* taste-skill-ignore */ }
+.coffee-btn:focus-visible { outline: 3px solid #d13506; outline-offset: 2px; }
+
+.bar-menu .coffee-btn { padding: 0 14px; font-size: 13px; text-decoration: none; opacity: 1; }
+/* Mid-size laptops: the bar has no room for it; contact and footer still carry it */
+@media (min-width: 1001px) and (max-width: 1359px) {
+    .bar-menu .coffee-btn { display: none; }
+}
+.bar-menu { align-items: center; }
+.contact-send .coffee-btn { margin-top: 32px; }
+.footer-menu .coffee-btn { margin-top: 40px; }
 
 /* ===== LIGHTBOX ===== */
 .lightbox {
@@ -597,6 +629,8 @@ a.day-block:hover { transform: translateX(6px); }
     }
     .bar-menu.is-open { display: flex; }
     .bar-menu a { padding: 12px 0; font-size: var(--step-lead); }
+    .bar-menu { align-items: stretch; }
+    .bar-menu .coffee-btn { margin-top: 12px; }
 
     .split { display: block; }
     .stage { position: relative; height: 58svh; padding: 0 12px; overflow: hidden; }
