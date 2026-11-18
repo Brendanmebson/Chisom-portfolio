@@ -82,7 +82,6 @@ if (contactForm) {
         contactForm.reset();
         window.location.href = mailtoLink;
 
-        console.log('Form submitted:', data);
     });
 }
 
@@ -186,10 +185,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// ===== PERFORMANCE: PASSIVE EVENT LISTENERS =====
-window.addEventListener('scroll', () => {}, { passive: true });
-window.addEventListener('touchmove', () => {}, { passive: true });
-
 // ===== ADD ANIMATION KEYFRAMES VIA JAVASCRIPT =====
 const style = document.createElement('style');
 style.textContent = `
@@ -234,8 +229,6 @@ document.head.appendChild(style);
 
 // ===== INITIALIZE ON LOAD =====
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Portfolio website initialized');
-    
     // Add data attributes for tracking
     document.querySelectorAll('a[href^="http"]').forEach(link => {
         link.setAttribute('rel', 'noopener noreferrer');
@@ -245,26 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initProjectSliders();
     initLightbox();
 });
-
-function initProjectSliders() {
-    const sliders = document.querySelectorAll('.project-slider');
-
-    sliders.forEach(slider => {
-        const track = slider.querySelector('.project-slider-track');
-        if (!track) return;
-
-        const slides = Array.from(track.children);
-        if (slides.length < 2) return;
-
-        let currentIndex = 0;
-
-        setInterval(() => {
-            currentIndex = (currentIndex + 1) % slides.length;
-            track.style.transform = `translateX(-${currentIndex * 50}%)`;
-        }, 5000);
-    });
-}
-
 
 function initLightbox() {
     const lightboxOverlay = document.getElementById('lightbox-overlay');
@@ -439,8 +412,9 @@ function initProjectSliders() {
             startAuto();
         }
 
-        // start
-        if (hasMultiple) startAuto();
+        // start, unless the visitor asked for less motion
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (hasMultiple && !reduceMotion) startAuto();
 
         // store state
         projectSlidersState.push({ slider, track, slides, startAuto, stopAuto, goTo });
@@ -475,32 +449,3 @@ focusStyle.textContent = `
     }
 `;
 document.head.appendChild(focusStyle);
-
-// ===== UTILITY: GET VIEWPORT SIZE =====
-function getViewportSize() {
-    return {
-        width: Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0),
-        height: Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
-    };
-}
-
-// ===== UTILITY: DEBOUNCE FUNCTION =====
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// ===== RESPONSIVE BEHAVIOR =====
-const handleResize = debounce(() => {
-    const viewport = getViewportSize();
-    console.log('Viewport size:', viewport);
-}, 250);
-
-window.addEventListener('resize', handleResize);
